@@ -71,17 +71,17 @@ class FaceDetector():
 
         sorted_idxs = probs.argsort()[::-1].tolist()
 
-        abs_bbox = np.copy(reg)
+        abs_reg = np.copy(reg)
         
         # turn relative bbox/keyp into absolute bbox/keyp
         for idx in sorted_idxs:
             center = anchors[idx,:2] * 128
             for j in range(2):
-                abs_bbox[idx,j] = center[j] + abs_bbox[idx,j]
-                abs_bbox[idx,(j+4)::2] = center[j] + abs_bbox[idx,(j+4)::2]
+                abs_reg[idx,j] = center[j] + abs_reg[idx,j]
+                abs_reg[idx,(j+4)::2] = center[j] + abs_reg[idx,(j+4)::2]
 
         remain_idxs = sorted_idxs
-        output_bbox = abs_bbox[0:0,:]
+        output_regs = abs_reg[0:0,:]
 
         while len(remain_idxs) > 0:
             # separate remain_idxs into candids and remain
@@ -89,7 +89,7 @@ class FaceDetector():
             remains = []
             idx0 = remain_idxs[0]
             for idx in remain_idxs:
-                iou = self._iou(abs_bbox[idx0,:], abs_bbox[idx,:])
+                iou = self._iou(abs_reg[idx0,:], abs_reg[idx,:])
                 if iou >= 0.3:
                     candids.append(idx)
                 else:
@@ -97,22 +97,22 @@ class FaceDetector():
 
             # compute weighted bbox/keyp
             if not weighted:
-                weighted_bbox = abs_bbox[idx0,:]
+                weighted_reg = abs_reg[idx0,:]
             else:
-                weighted_bbox = abs_bbox[0,:] * 0
+                weighted_reg = abs_reg[0,:] * 0
                 weight_sum = 0
                 for idx in candids:
-                    w = probs[idx]
-                    weight_sum = weight_sum + w
-                    weighted_bbox = weighted_bbox + w * abs_bbox[idx,:]
-                weighted_bbox = weighted_bbox / weight_sum
+                    weight = probs[idx]
+                    weight_sum += weight
+                    weighted_reg += weight * abs_reg[idx,:]
+                weighted_reg /= weight_sum
 
             # add a new instance
-            output_bbox = np.concatenate((output_bbox, weighted_bbox.reshape(1,-1)), axis=0)
+            output_regs = np.concatenate((output_regs, weighted_reg.reshape(1,-1)), axis=0)
             
             remain_idxs = remains
 
-        return output_bbox
+        return output_regs
 
     def detect_face(self, img_norm):
         assert -1 <= img_norm.min() and img_norm.max() <= 1,\
