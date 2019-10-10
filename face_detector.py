@@ -55,8 +55,8 @@ class FaceDetector():
     def _pad1(x):
         return np.pad(x, ((0,0),(0,1)), constant_values=1, mode='constant')
     
-    # compute IoU similarity
-    def calc_iou(self, box0, box1):
+    @staticmethod
+    def _iou(box0, box1):
         xmin = max(box0[0]-box0[2]/2, box1[0]-box1[2]/2)
         ymin = max(box0[1]-box0[3]/2, box1[1]-box1[3]/2)
         xmax = min(box0[0]+box0[2]/2, box1[0]+box1[2]/2)
@@ -89,7 +89,7 @@ class FaceDetector():
             remains = []
             idx0 = remain_idxs[0]
             for idx in remain_idxs:
-                iou = self.calc_iou(abs_bbox[idx0,:], abs_bbox[idx,:])
+                iou = self._iou(abs_bbox[idx0,:], abs_bbox[idx,:])
                 if iou >= 0.3:
                     candids.append(idx)
                 else:
