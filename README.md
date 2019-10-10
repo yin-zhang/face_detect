@@ -24,3 +24,5 @@ As there's no reason to modify provided anchors I do not include it into the rep
 ## Acknowledgments
 
 This work is a study of models developed by Google and distributed as a part of the [Mediapipe](https://github.com/google/mediapipe) framework.
+
+The code is motivated and heavily influenced by [this repository](https://github.com/wolterlw/hand_tracking)
