@@ -57,12 +57,14 @@ class FaceDetector():
     
     @staticmethod
     def _iou(box0, box1):
-        xmin = max(box0[0]-box0[2]/2, box1[0]-box1[2]/2)
-        ymin = max(box0[1]-box0[3]/2, box1[1]-box1[3]/2)
-        xmax = min(box0[0]+box0[2]/2, box1[0]+box1[2]/2)
-        ymax = min(box0[1]+box0[3]/2, box1[1]+box1[3]/2)
-        area0 = box0[2] * box0[3]
-        area1 = box1[2] * box1[3]
+        x0,y0,w0,h0 = box0[:4]
+        x1,y1,w1,h1 = box1[:4]
+        area0 = w0 * h0
+        area1 = w1 * h1
+        xmin = max(x0-w0/2,x1-w1/2)
+        ymin = max(y0-h0/2,y1-h1/2)
+        xmax = min(x0+w0/2,x1+w1/2)
+        ymax = min(y0+h0/2,y1+h1/2)
         i = max(0, xmax - xmin) * max(0, ymax - ymin)
         u = area0 + area1 - i
         return i / u
