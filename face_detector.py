@@ -57,8 +57,8 @@ class FaceDetector():
     
     @staticmethod
     def _iou(box0, box1):
-        x0,y0,w0,h0 = box0[:4]
-        x1,y1,w1,h1 = box1[:4]
+        x0,y0,w0,h0 = box0
+        x1,y1,w1,h1 = box1
         area0 = w0 * h0
         area1 = w1 * h1
         xmin = max(x0-w0/2,x1-w1/2)
@@ -91,7 +91,7 @@ class FaceDetector():
             remains = []
             idx0 = remain_idxs[0]
             for idx in remain_idxs:
-                iou = self._iou(abs_reg[idx0,:], abs_reg[idx,:])
+                iou = self._iou(abs_reg[idx0,:4], abs_reg[idx,:4])
                 if iou >= 0.3:
                     candids.append(idx)
                 else:
