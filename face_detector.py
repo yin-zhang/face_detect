@@ -5,19 +5,19 @@ import tensorflow as tf
 
 class FaceDetector():
     r"""
-    Class to use Google's Mediapipe HandTracking pipeline from Python.
-    So far only detection of a single hand is supported.
-    Any any image size and aspect ratio supported.
+    Class to use Google's Mediapipe FaceDetector pipeline from Python.
+    Any any image size and aspect ratio supported.  Multiple
+    faces are supported.
 
     Args:
         face_model: path to the face_detection_front.tflite
         anchors_path: path to the csv containing SSD anchors
     Ourput:
-        (21,2) array of hand joints.
+        (6,2) array of keypoints and bounding boxes
     Examples::
         >>> det = FaceDetector(path1, path2)
         >>> input_img = np.random.randint(0,255, 128*128*3).reshape(128,128,3)
-        >>> keypoints, bbox = det(input_img)
+        >>> list_keypoints, list_bbox = det(input_img)
     """
 
     def __init__(self, face_model, anchors_path):
@@ -120,7 +120,7 @@ class FaceDetector():
         assert img_norm.shape == (128, 128, 3),\
         "img_norm shape must be (128, 128, 3)"
 
-        # predict hand location and 7 initial landmarks
+        # predict face location and 6 initial landmarks
         self.interp_face.set_tensor(self.in_idx, img_norm[None])
         self.interp_face.invoke()
 
@@ -135,27 +135,27 @@ class FaceDetector():
         filtered_probs = out_prb[detection_mask]
 
         if filtered_detect.shape[0] == 0:
-            print("No hands found")
-            return None, None, None
+            print("No faces found")
+            return None, None
 
         # perform non-maximum suppression
         candidate_detect = self.non_maximum_suppression(filtered_detect, filtered_anchors, filtered_probs)
 
-        list_sources = []
-        list_keypoints = []
+        bboxs = []
+        keyps = []
 
         for idx in range(candidate_detect.shape[0]):
 
             # bounding box center offsets, width and height
-            cx,cy,w,h = candidate_detect[idx, :4]
+            bbox = candidate_detect[idx, :4]
 
-            # 7 initial keypoints
-            keypoints = candidate_detect[idx,4:].reshape(-1,2)
+            # 6 initial keypoints
+            keyp = candidate_detect[idx,4:].reshape(-1,2)
         
-            list_sources.append(np.float32([cx,cy,w,h]))
-            list_keypoints.append(keypoints)
+            bboxs.append(bbox)
+            keyps.append(keyp)
             
-        return list_sources, list_keypoints
+        return bboxs, keyps
 
     def preprocess_img(self, img):
         # fit the image into a 128x128 square
@@ -175,27 +175,25 @@ class FaceDetector():
     def __call__(self, img):
         img_pad, img_norm, pad = self.preprocess_img(img)
         
-        list_sources, list_keypoints = self.detect_face(img_norm)
-        if list_sources is None:
+        bboxs, keyps = self.detect_face(img_norm)
+        if bboxs is None:
             return None, None
+
+        scale = max(img.shape) / 128
 
         list_keyp = []
         list_bbox = []
-        for i in range(len(list_sources)):
+        for i in range(len(bboxs)):
 
-            bbox = list_sources[i]
-            keypoints = list_keypoints[i]
+            bbox = bboxs[i]
+            keyp = keyps[i]
 
-            # calculating transformation from img_pad coords
-            # to img_landmark coords (cropped hand image)
-            scale = max(img.shape) / 128
             bbox *= scale
-            keypoints *= scale
-            bbox[0] -= pad[1]
-            bbox[1] -= pad[0]
-            keypoints -= pad[::-1]
+            keyp *= scale
+            bbox[:2] -= pad[::-1]
+            keyp -= pad[::-1]
 
-            list_keyp.append(keypoints)
+            list_keyp.append(keyp)
             list_bbox.append(bbox)
             
         return list_keyp, list_bbox
