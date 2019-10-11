@@ -69,10 +69,10 @@ class FaceDetector():
         u = area0 + area1 - i
         return i / u
 
-    def non_maximum_suppression(self, reg, anchors, probs,
+    def non_maximum_suppression(self, reg, anchors, scores,
                                 weighted=True, iou_thresh=0.3, max_results=-1):
 
-        sorted_idxs = probs.argsort()[::-1].tolist()
+        sorted_idxs = scores.argsort()[::-1].tolist()
 
         abs_reg = np.copy(reg)
         
@@ -103,12 +103,11 @@ class FaceDetector():
                 weighted_reg = abs_reg[idx0,:]
             else:
                 weighted_reg = 0
-                weight_sum = 0
+                total_score = 0
                 for idx in candids:
-                    weight = probs[idx]
-                    weight_sum += weight
-                    weighted_reg += weight * abs_reg[idx,:]
-                weighted_reg /= weight_sum
+                    total_score += scores[idx]
+                    weighted_reg += scores[idx] * abs_reg[idx,:]
+                weighted_reg /= total_score
 
             # add a new instance
             output_regs = np.concatenate((output_regs, weighted_reg.reshape(1,-1)), axis=0)
@@ -132,20 +131,20 @@ class FaceDetector():
 
         out_reg = self.interp_face.get_tensor(self.out_reg_idx)[0]
         out_clf = self.interp_face.get_tensor(self.out_clf_idx)[0,:,0]
-        out_prb = self._sigm(out_clf)
+        out_scr = self._sigm(out_clf)
 
         # finding the best prediction
-        detection_mask = out_prb > 0.75
+        detection_mask = out_scr > 0.75
         filtered_detect = out_reg[detection_mask]
         filtered_anchors = self.anchors[detection_mask]
-        filtered_probs = out_prb[detection_mask]
+        filtered_scores = out_scr[detection_mask]
 
         if filtered_detect.shape[0] == 0:
             print("No faces found")
             return None, None
 
         # perform non-maximum suppression
-        candidate_detect = self.non_maximum_suppression(filtered_detect, filtered_anchors, filtered_probs)
+        candidate_detect = self.non_maximum_suppression(filtered_detect, filtered_anchors, filtered_scores)
 
         bboxs = []
         keyps = []
