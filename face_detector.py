@@ -101,7 +101,7 @@ class FaceDetector():
             if not weighted:
                 weighted_reg = abs_reg[idx0,:]
             else:
-                weighted_reg = abs_reg[0,:] * 0
+                weighted_reg = 0
                 weight_sum = 0
                 for idx in candids:
                     weight = probs[idx]
