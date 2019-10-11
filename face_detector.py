@@ -69,7 +69,8 @@ class FaceDetector():
         u = area0 + area1 - i
         return i / u
 
-    def non_maximum_suppression(self, reg, anchors, probs, weighted=True):
+    def non_maximum_suppression(self, reg, anchors, probs,
+                                weighted=True, iou_thresh=0.3, max_results=-1):
 
         sorted_idxs = probs.argsort()[::-1].tolist()
 
@@ -92,7 +93,7 @@ class FaceDetector():
             idx0 = remain_idxs[0]
             for idx in remain_idxs:
                 iou = self._iou(abs_reg[idx0,:4], abs_reg[idx,:4])
-                if iou >= 0.3:
+                if iou >= iou_thresh:
                     candids.append(idx)
                 else:
                     remains.append(idx)
@@ -113,6 +114,9 @@ class FaceDetector():
             output_regs = np.concatenate((output_regs, weighted_reg.reshape(1,-1)), axis=0)
             
             remain_idxs = remains
+
+            if max_results > 0 and output_regs.shape[0] >= max_results:
+                break
 
         return output_regs
 
