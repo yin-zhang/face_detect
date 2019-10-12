@@ -97,7 +97,7 @@ class FaceDetector():
             remains = []
             idx0 = remain_idxs[0]
             for idx in remain_idxs:
-                sim = self._sim(abs_reg[idx0,:4], abs_reg[idx,:4], do_iou=False)
+                sim = self._sim(abs_reg[idx0,:4], abs_reg[idx,:4])
                 if sim >= sim_thresh:
                     candids.append(idx)
                 else:
