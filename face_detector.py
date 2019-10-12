@@ -72,7 +72,7 @@ class FaceDetector():
             # modified jaccard
             u = area1
         
-        return i / u
+        return i / (u + 1e-6)
 
     def non_maximum_suppression(self, reg, anchors, scores,
                                 weighted=True, sim_thresh=0.3, max_results=-1):
